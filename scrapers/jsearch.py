@@ -4,6 +4,7 @@ from scrapers.base import BaseScraper
 from models import Job, JobFilter
 from pipeline.parsers import extract_tech_stack
 from config import settings
+from pipeline.blocked_portals import is_blocked_portal_url
 
 
 class JSearchScraper(BaseScraper):
@@ -98,11 +99,6 @@ class JSearchScraper(BaseScraper):
         return jobs
 
 
-_BLOCKED_DOMAINS = {
-    "google.com", "talk4fun.net", "web1337.net",
-}
-
-
 def _best_apply_url(record: dict) -> str:
     """Return the most reliable apply URL from a JSearch job record.
 
@@ -128,4 +124,5 @@ def _best_apply_url(record: dict) -> str:
 
 
 def _is_blocked(url: str) -> bool:
-    return any(domain in url for domain in _BLOCKED_DOMAINS)
+    extra = settings.blocked_portal_domains_set
+    return is_blocked_portal_url(url, extra_domains=extra or None)

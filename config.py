@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Comma-separated source names to skip URL verification for.
     # Use "jsearch" to skip all jsearch results, or exact names like "activejobsdb,linkedin"
     verify_skip_sources: str = "jsearch"
+    # Extra apply-url domains to drop (comma-separated), e.g. "example.com,foo.io"
+    blocked_portal_domains: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
@@ -49,6 +51,14 @@ class Settings(BaseSettings):
     @property
     def skip_sources_set(self) -> set[str]:
         return {s.strip() for s in self.verify_skip_sources.split(",") if s.strip()}
+
+    @property
+    def blocked_portal_domains_set(self) -> frozenset[str]:
+        return frozenset(
+            d.strip().lower().removeprefix("www.")
+            for d in self.blocked_portal_domains.split(",")
+            if d.strip()
+        )
 
 
 settings = Settings()

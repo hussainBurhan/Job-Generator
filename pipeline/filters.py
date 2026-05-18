@@ -1,4 +1,18 @@
+from config import settings
 from models import Job, JobFilter
+from pipeline.blocked_portals import is_blocked_portal_url
+
+
+def drop_blocked_portals(jobs: list[Job]) -> tuple[list[Job], int]:
+    extra = settings.blocked_portal_domains_set
+    kept: list[Job] = []
+    dropped = 0
+    for job in jobs:
+        if is_blocked_portal_url(job.apply_url, extra_domains=extra or None):
+            dropped += 1
+        else:
+            kept.append(job)
+    return kept, dropped
 
 
 def apply_filters(jobs: list[Job], f: JobFilter) -> list[Job]:
@@ -6,6 +20,10 @@ def apply_filters(jobs: list[Job], f: JobFilter) -> list[Job]:
 
 
 def _passes(job: Job, f: JobFilter) -> bool:
+    extra = settings.blocked_portal_domains_set
+    if is_blocked_portal_url(job.apply_url, extra_domains=extra or None):
+        return False
+
     # Remote filter
     if "remote" in [loc.lower() for loc in f.locations] and not job.is_remote:
         return False

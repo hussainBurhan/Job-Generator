@@ -4,6 +4,7 @@ from scrapers.base import BaseScraper
 from models import Job, JobFilter
 from pipeline.parsers import extract_tech_stack
 from config import settings
+from pipeline.blocked_portals import is_blocked_portal_url
 
 
 class SerpAPIGoogleJobsScraper(BaseScraper):
@@ -134,14 +135,18 @@ def _parse_salary(
     return raw, numbers[0], numbers[1]
 
 
+def _is_blocked(url: str) -> bool:
+    extra = settings.blocked_portal_domains_set
+    return is_blocked_portal_url(url, extra_domains=extra or None)
+
+
 def _best_apply_url(r: dict) -> str:
     for opt in r.get("apply_options") or []:
         link = opt.get("link", "")
-        if link:
+        if link and not _is_blocked(link):
             return link
-    # Fall back to a related link
     for rel in r.get("related_links") or []:
         link = rel.get("link", "")
-        if link:
+        if link and not _is_blocked(link):
             return link
     return ""

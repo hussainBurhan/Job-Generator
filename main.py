@@ -6,7 +6,7 @@ from rich.table import Table
 
 from config import settings
 from models import JobFilter
-from pipeline.filters import apply_filters
+from pipeline.filters import apply_filters, drop_blocked_portals
 from pipeline.verifier import verify_jobs
 from scrapers.jsearch import JSearchScraper
 from scrapers.serpapi import SerpAPIGoogleJobsScraper
@@ -55,6 +55,12 @@ async def run_pipeline(query: str, job_filter: JobFilter) -> None:
             console.print(f"  [red]✗ {scraper.source_name} failed:[/] {msg}")
             if "429" in msg:
                 console.print(f"    [dim yellow]Rate limited — will succeed on next run when quota resets[/]")
+
+    all_jobs, portal_dropped = drop_blocked_portals(all_jobs)
+    if portal_dropped:
+        console.print(
+            f"[dim]Dropped {portal_dropped} listings on paid/aggregator job portals[/]\n"
+        )
 
     skip = settings.skip_sources_set
     skip_note = f"  [dim](skipping verification for: {', '.join(sorted(skip))})[/]" if skip else ""
